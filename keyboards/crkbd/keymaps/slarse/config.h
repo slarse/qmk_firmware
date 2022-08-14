@@ -49,6 +49,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HOME_DW LALT_T(KC_DOWN)
 #define HOME_RT LCTL_T(KC_RIGHT)
 
+// Layers
+#define L1_SPC LT(1, KC_SPC)
+#define L2_ENT LT(2, KC_ENT)
+
 #ifdef RGBLIGHT_ENABLE
     #define RGBLIGHT_EFFECT_BREATHING
     #define RGBLIGHT_EFFECT_RAINBOW_MOOD
