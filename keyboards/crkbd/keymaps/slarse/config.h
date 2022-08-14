@@ -29,7 +29,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // #define EE_HANDS
 
 //#define TAPPING_FORCE_HOLD
-//#define TAPPING_TERM 100
+
+// Home row mods
+#define TAPPING_TERM 100
+#define IGNORE_MOD_TAP_INTERRUPT
+#define TAPPING_FORCE_HOLD
+
+#define HOME_T LSFT_T(KC_T)
+#define HOME_S LCTL_T(KC_S)
+#define HOME_R LALT_T(KC_R)
+#define HOME_A LGUI_T(KC_A)
+
+#define HOME_N RSFT_T(KC_N)
+#define HOME_E RCTL_T(KC_E)
+#define HOME_I LALT_T(KC_I)
+#define HOME_O LGUI_T(KC_O)
+
+#define HOME_LT LGUI_T(KC_LEFT)
+#define HOME_DW LALT_T(KC_DOWN)
+#define HOME_RT LCTL_T(KC_RIGHT)
 
 #ifdef RGBLIGHT_ENABLE
     #define RGBLIGHT_EFFECT_BREATHING
