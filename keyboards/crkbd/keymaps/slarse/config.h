@@ -52,6 +52,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Layers
 #define L1_SPC LT(1, KC_SPC)
 #define L2_ENT LT(2, KC_ENT)
+#define L2_MINS LT(2, KC_MINS)
 
 #ifdef RGBLIGHT_ENABLE
     #define RGBLIGHT_EFFECT_BREATHING
