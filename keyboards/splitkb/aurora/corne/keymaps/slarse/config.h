@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Home row mods
 #define TAPPING_TERM 175
 #define QUICK_TAP_TERM 90
+#define PERMISSIVE_HOLD
 
 #define HOME_T LSFT_T(KC_T)
 #define HOME_S LCTL_T(KC_S)
