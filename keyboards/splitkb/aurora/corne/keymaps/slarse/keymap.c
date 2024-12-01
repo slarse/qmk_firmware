@@ -17,7 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include QMK_KEYBOARD_H
+#include "gpio.h"
 #include <stdio.h>
+
+void keyboard_pre_init_user(void) {
+    // turn off power LED - it's way too bright
+    gpio_set_pin_output(24);
+    gpio_write_pin_high(24);
+}
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_split_3x6_3(
