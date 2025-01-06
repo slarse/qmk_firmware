@@ -113,14 +113,16 @@ static unsigned char PROGMEM current_time_buf[] = "00:00";
 uint8_t current_battery_perc = 0;
 uint8_t current_cpu_perc = 0;
 uint8_t current_ram_perc = 0;
-
+uint8_t current_signal_strength_perc = 0;
 
 static unsigned char PROGMEM current_battery_perc_buf[] = "100";
 static unsigned char PROGMEM current_cpu_perc_buf[] = "100";
 static unsigned char PROGMEM current_ram_perc_buf[] = "100";
+static unsigned char PROGMEM current_signal_strength_perc_buf[] = "100";
 
 static const char PROGMEM ram_symbol[] = {0x3E, 0x14, 0x36, 0x14, 0x3E, 0x00};
 static const char PROGMEM cpu_symbol[] = {0x08, 0x3E, 0x14, 0x3E, 0x08, 0x00};
+static const char PROGMEM wifi_symbol[] = {0x02, 0x09, 0x25, 0x09, 0x02, 0x00};
 
 // Convert the number into a null-terminated string. The buffer must accomodate the null-terminator.
 //
@@ -231,6 +233,7 @@ static const size_t BYTE_MINUTE = 1;
 static const size_t BYTE_BATTERY = 2;
 static const size_t BYTE_CPU = 3;
 static const size_t BYTE_RAM = 4;
+static const size_t BYTE_SIGNAL = 5;
 
 uint8_t min(uint8_t lhs, uint8_t rhs) {
     return lhs <= rhs ? lhs : rhs;
@@ -247,11 +250,13 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     current_battery_perc = min(100, data[BYTE_BATTERY]);
     current_cpu_perc = min(100, data[BYTE_CPU]);
     current_ram_perc = min(100, data[BYTE_RAM]);
+    current_signal_strength_perc = min(100, data[BYTE_SIGNAL]);
 
     // We need to compute these on receive as doing it on writing to the OLED takes too long
     to_string(current_battery_perc, current_battery_perc_buf, sizeof(current_battery_perc_buf));
     to_string(current_cpu_perc, current_cpu_perc_buf, sizeof(current_cpu_perc_buf));
     to_string(current_ram_perc, current_ram_perc_buf, sizeof(current_ram_perc_buf));
+    to_string(current_signal_strength_perc, current_signal_strength_perc_buf, sizeof(current_signal_strength_perc_buf));
 }
 
 void ensure_blank_line(uint8_t chars_written) {
@@ -305,6 +310,9 @@ bool oled_task_user(void) {
 
         uint8_t ram_chars_written = write_perc_with_symbol(ram_symbol, (char*) current_ram_perc_buf);
         ensure_blank_line(ram_chars_written);
+
+        uint8_t signal_strength_chars_written = write_perc_with_symbol(wifi_symbol, (char*) current_signal_strength_perc_buf);
+        ensure_blank_line(signal_strength_chars_written);
 
         write_wpm();
 

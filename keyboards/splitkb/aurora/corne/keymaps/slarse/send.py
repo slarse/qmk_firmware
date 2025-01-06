@@ -49,6 +49,7 @@ def send_reports_forever(device: hid.Device) -> None:
         cur_cpu_times = get_cpu_times()
         cpu_usage = compute_cpu_usage(cur_cpu_times, prev_cpu_times)
         ram_usage = get_ram_usage()
+        signal_strength = get_signal_strength_perc()
 
         curtime = time.localtime()
         data = bytes(
@@ -58,9 +59,9 @@ def send_reports_forever(device: hid.Device) -> None:
                 get_battery_perc(),
                 cpu_usage,
                 ram_usage,
+                signal_strength,
             ]
         )
-        print(data)
 
         send_raw_report(device, data)
 
@@ -88,7 +89,6 @@ def send_raw_report(device: hid.Device, data: bytes):
     request_report = report_id + request_data
 
     device.write(request_report)
-    device.read(REPORT_LENGTH, timeout=1000)
 
 
 def get_ram_usage() -> int:
@@ -149,6 +149,29 @@ def get_battery_perc() -> int:
         perc_data = int(perc)
 
     return perc_data
+
+
+def get_signal_strength_perc() -> int:
+    proc = subprocess.run(
+        "iwctl station wlan0 show".split(),
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        return 0
+
+    rssi_line, *_ = [
+        line.strip()
+        for line in proc.stdout.decode().split("\n")
+        if line.strip().startswith("RSSI")
+    ]
+    rssi = int(rssi_line.split()[1])
+
+    if rssi < -100:
+        return 0
+    elif rssi < -50:
+        return 2 * (rssi + 100)
+    else:
+        return 100
 
 
 if __name__ == "__main__":
