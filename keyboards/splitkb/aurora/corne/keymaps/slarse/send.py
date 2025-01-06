@@ -12,13 +12,28 @@ import subprocess
 REPORT_LENGTH = 32
 
 # Note: Requires udev rule to symlink the device to this path
+# DOES NOT WORK; selects the wrong interface sometimes as the keyboard exposes TWO hidraw interfaces ...
 HIDRAW_INTERFACE_PATH = b"/dev/hidraw_corne"
+
+VENDOR_ID = 0x8D1D
+PRODUCT_ID = 0x343A
+
+USAGE_PAGE = 0xFF60
+USAGE = 0x61
 
 
 def main():
+    device_interfaces = hid.enumerate(VENDOR_ID, PRODUCT_ID)
+    raw_hid_interfaces = [
+        i
+        for i in device_interfaces
+        if i["usage_page"] == USAGE_PAGE and i["usage"] == USAGE
+    ]
+    path = raw_hid_interfaces[0]["path"]
+
     while True:
         try:
-            with open_device(HIDRAW_INTERFACE_PATH) as device:
+            with hid.Device(path=path) as device:
                 send_reports_forever(device)
         except hid.HIDException as e:
             print(e, file=sys.stderr)
