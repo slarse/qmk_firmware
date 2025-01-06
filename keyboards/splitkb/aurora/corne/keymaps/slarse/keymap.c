@@ -74,7 +74,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )
 };
 
+static uint32_t key_timer;
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  key_timer = timer_read32();
+
   switch (keycode) {
     case _KC_NXT:
       if (!record->event.pressed) {
@@ -233,10 +237,9 @@ uint8_t min(uint8_t lhs, uint8_t rhs) {
 }
 
 void raw_hid_receive(uint8_t *data, uint8_t length) {
-    if (!is_oled_on()) {
-        // If we don't do this, any receive will cause the OLED to wake up from sleep,
-        // which is kind of silly. We only want to display new data on the screen when
-        // the keyboard is in use.
+    if (!is_oled_on() || timer_elapsed32(key_timer) > OLED_TIMEOUT) {
+        // Ensure that HID receives don't wake up the OLED, and also don't keep it
+        // awake perpetually.
         return;
     }
 
@@ -270,6 +273,25 @@ uint8_t write_layer(char* label, bool is_on) {
     return 4;
 }
 
+void write_wpm(void) {
+    static unsigned char wpm_buf[] = "???";
+    uint8_t num_digits = to_string(get_current_wpm(), wpm_buf, sizeof(wpm_buf));
+
+    static const char speed_symbol[] = {
+        0x1C, 0x22, 0x41, 0x49, 0x45, 0x22,
+        0x1C, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+
+    oled_write_raw(speed_symbol, 2 * OLED_FONT_WIDTH);
+    oled_advance_char();
+    oled_advance_char();
+    oled_write((char*) wpm_buf, false);
+
+    if (num_digits < 3) {
+        oled_advance_page(true);
+    }
+}
+
 bool oled_task_user(void) {
     if (is_keyboard_master()) {
         oled_write((char*) current_time_buf, false);
@@ -283,6 +305,9 @@ bool oled_task_user(void) {
 
         uint8_t ram_chars_written = write_perc_with_symbol(ram_symbol, (char*) current_ram_perc_buf);
         ensure_blank_line(ram_chars_written);
+
+        write_wpm();
+
         return false;
     } else {
         uint8_t default_layer = get_highest_layer(default_layer_state);
