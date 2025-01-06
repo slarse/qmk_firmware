@@ -115,6 +115,9 @@ static unsigned char PROGMEM current_battery_perc_buf[] = "100";
 static unsigned char PROGMEM current_cpu_perc_buf[] = "100";
 static unsigned char PROGMEM current_ram_perc_buf[] = "100";
 
+static const char PROGMEM ram_symbol[] = {0x3E, 0x14, 0x36, 0x14, 0x3E, 0x00};
+static const char PROGMEM cpu_symbol[] = {0x08, 0x3E, 0x14, 0x3E, 0x08, 0x00};
+
 // Convert the number into a null-terminated string. The buffer must accomodate the null-terminator.
 //
 // Returns the amount of digits that were written out.
@@ -187,65 +190,36 @@ uint8_t format_time(unsigned char hour, unsigned char minute, unsigned char *buf
     return 0;
 }
 
-uint8_t write_battery_perc(void) {
-    uint8_t perc = current_battery_perc;
-    if (perc > 100) {
-        perc = 100;
-    }
-
+const char* get_battery_symbol(uint8_t perc) {
     static const char PROGMEM battery_100[] = {0x7E, 0x7F, 0x7F, 0x7F, 0x7E, 0x00};
     static const char PROGMEM battery_75[] = {0x7E, 0x7B, 0x7B, 0x7B, 0x7E, 0x00};
     static const char PROGMEM battery_50[] = {0x7E, 0x73, 0x73, 0x73, 0x7E, 0x00};
     static const char PROGMEM battery_25[] = {0x7E, 0x63, 0x63, 0x63, 0x7E, 0x00};
 
     if (perc <= 25) {
-        oled_write_raw(battery_25, sizeof(battery_25));
+        return battery_25;
     } else if (perc <= 50) {
-        oled_write_raw(battery_50, sizeof(battery_50));
+        return battery_50;
     } else if (perc <= 75) {
-        oled_write_raw(battery_75, sizeof(battery_75));
+        return battery_75;
     } else {
-        oled_write_raw(battery_100, sizeof(battery_100));
+        return battery_100;
     }
-
-    oled_advance_char();
-
-    oled_write((char*) current_battery_perc_buf, false);
-    oled_write_char('%', false);
-
-    return (uint8_t) strlen((char*) current_battery_perc_buf) + 2;
 }
 
-uint8_t write_cpu_perc(void) {
-    uint8_t perc = current_cpu_perc;
-    if (perc > 100) {
-        perc = 100;
-    }
-
-    static const char PROGMEM cpu_symbol[] = {0x08, 0x3E, 0x14, 0x3E, 0x08, 0x00};
-    oled_write_raw(cpu_symbol, sizeof(cpu_symbol));
+// Write out a percentage n with symbol on the following form: <symbol><n>%
+//
+// perc_buf MUST be null-terminated and SHOULD hold between 1-3 digits. Anything else may yield unexpected results.
+//
+// The symbol is assumed to be exactly one character (OLED_FONT_WIDTH bytes), not including any null terminator.
+uint8_t write_perc_with_symbol(const char *symbol, char *perc_buf) {
+    oled_write_raw(symbol, OLED_FONT_WIDTH);
     oled_advance_char();
 
-    oled_write((char*) current_cpu_perc_buf, false);
+    oled_write(perc_buf, false);
     oled_write_char('%', false);
 
-    return (uint8_t) strlen((char*) current_cpu_perc_buf) + 2;
-}
-
-uint8_t write_ram_perc(void) {
-    uint8_t perc = current_ram_perc;
-    if (perc > 100) {
-        perc = 100;
-    }
-
-    static const char PROGMEM ram_symbol[] = {0x3E, 0x14, 0x36, 0x14, 0x3E, 0x00};
-    oled_write_raw(ram_symbol, sizeof(ram_symbol));
-    oled_advance_char();
-
-    oled_write((char*) current_ram_perc_buf, false);
-    oled_write_char('%', false);
-
-    return (uint8_t) strlen((char*) current_ram_perc_buf) + 2;
+    return (uint8_t) strlen((char*) perc_buf) + 2;
 }
 
 static const size_t BYTE_HOUR = 0;
@@ -253,6 +227,10 @@ static const size_t BYTE_MINUTE = 1;
 static const size_t BYTE_BATTERY = 2;
 static const size_t BYTE_CPU = 3;
 static const size_t BYTE_RAM = 4;
+
+uint8_t min(uint8_t lhs, uint8_t rhs) {
+    return lhs <= rhs ? lhs : rhs;
+}
 
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     if (!is_oled_on()) {
@@ -263,9 +241,9 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     }
 
     format_time(data[BYTE_HOUR], data[BYTE_MINUTE], current_time_buf, sizeof(current_time_buf));
-    current_battery_perc = data[BYTE_BATTERY];
-    current_cpu_perc = data[BYTE_CPU];
-    current_ram_perc = data[BYTE_RAM];
+    current_battery_perc = min(100, data[BYTE_BATTERY]);
+    current_cpu_perc = min(100, data[BYTE_CPU]);
+    current_ram_perc = min(100, data[BYTE_RAM]);
 
     // We need to compute these on receive as doing it on writing to the OLED takes too long
     to_string(current_battery_perc, current_battery_perc_buf, sizeof(current_battery_perc_buf));
@@ -297,13 +275,13 @@ bool oled_task_user(void) {
         oled_write((char*) current_time_buf, false);
         oled_advance_page(true);
 
-        uint8_t bat_chars_written = write_battery_perc();
+        uint8_t bat_chars_written = write_perc_with_symbol(get_battery_symbol(current_battery_perc), (char*) current_battery_perc_buf);
         ensure_blank_line(bat_chars_written);
 
-        uint8_t cpu_chars_written = write_cpu_perc();
+        uint8_t cpu_chars_written = write_perc_with_symbol(cpu_symbol, (char*) current_cpu_perc_buf);
         ensure_blank_line(cpu_chars_written);
 
-        uint8_t ram_chars_written =write_ram_perc();
+        uint8_t ram_chars_written = write_perc_with_symbol(ram_symbol, (char*) current_ram_perc_buf);
         ensure_blank_line(ram_chars_written);
         return false;
     } else {
