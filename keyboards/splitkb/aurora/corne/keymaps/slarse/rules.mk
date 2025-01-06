@@ -1,2 +1,3 @@
 RGBLIGHT_ENABLE = no
 OLED_ENABLE = yes
+RAW_ENABLE = yes
