@@ -97,7 +97,6 @@ def get_ram_usage() -> int:
         line for line in proc.stdout.decode().split("\n") if line.startswith("Mem:")
     ][0]
     _, total, used, *_ = mem_line.split()
-    print(total, used)
     return int(used) * 100 // int(total)
 
 
