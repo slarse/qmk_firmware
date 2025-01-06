@@ -108,21 +108,21 @@ void keyboard_pre_init_user(void) {
 }
 
 #ifdef OLED_ENABLE
-static unsigned char PROGMEM current_time_buf[] = "00:00";
+static unsigned char current_time_buf[] = "00:00";
 
 uint8_t current_battery_perc = 0;
 uint8_t current_cpu_perc = 0;
 uint8_t current_ram_perc = 0;
 uint8_t current_signal_strength_perc = 0;
 
-static unsigned char PROGMEM current_battery_perc_buf[] = "100";
-static unsigned char PROGMEM current_cpu_perc_buf[] = "100";
-static unsigned char PROGMEM current_ram_perc_buf[] = "100";
-static unsigned char PROGMEM current_signal_strength_perc_buf[] = "100";
+static unsigned char current_battery_perc_buf[] = "100";
+static unsigned char current_cpu_perc_buf[] = "100";
+static unsigned char current_ram_perc_buf[] = "100";
+static unsigned char current_signal_strength_perc_buf[] = "100";
 
-static const char PROGMEM ram_symbol[] = {0x3E, 0x14, 0x36, 0x14, 0x3E, 0x00};
-static const char PROGMEM cpu_symbol[] = {0x08, 0x3E, 0x14, 0x3E, 0x08, 0x00};
-static const char PROGMEM wifi_symbol[] = {0x02, 0x09, 0x25, 0x09, 0x02, 0x00};
+static const char ram_symbol[] = {0x3E, 0x14, 0x36, 0x14, 0x3E, 0x00};
+static const char cpu_symbol[] = {0x08, 0x3E, 0x14, 0x3E, 0x08, 0x00};
+static const char wifi_symbol[] = {0x02, 0x09, 0x25, 0x09, 0x02, 0x00};
 
 // Convert the number into a null-terminated string. The buffer must accomodate the null-terminator.
 //
@@ -160,8 +160,8 @@ uint8_t to_string(unsigned char number, unsigned char *buf, size_t buf_size) {
 
 // Format the hour and minute values into format "HH:MM".
 uint8_t format_time(unsigned char hour, unsigned char minute, unsigned char *buf, size_t buf_size) {
-    static unsigned char PROGMEM hour_buf[3];
-    static unsigned char PROGMEM minute_buf[3];
+    static unsigned char hour_buf[3];
+    static unsigned char minute_buf[3];
 
     if (buf_size != 6) {
         return 2;
@@ -197,10 +197,10 @@ uint8_t format_time(unsigned char hour, unsigned char minute, unsigned char *buf
 }
 
 const char* get_battery_symbol(uint8_t perc) {
-    static const char PROGMEM battery_100[] = {0x7E, 0x7F, 0x7F, 0x7F, 0x7E, 0x00};
-    static const char PROGMEM battery_75[] = {0x7E, 0x7B, 0x7B, 0x7B, 0x7E, 0x00};
-    static const char PROGMEM battery_50[] = {0x7E, 0x73, 0x73, 0x73, 0x7E, 0x00};
-    static const char PROGMEM battery_25[] = {0x7E, 0x63, 0x63, 0x63, 0x7E, 0x00};
+    static const char battery_100[] = {0x7E, 0x7F, 0x7F, 0x7F, 0x7E, 0x00};
+    static const char battery_75[] = {0x7E, 0x7B, 0x7B, 0x7B, 0x7E, 0x00};
+    static const char battery_50[] = {0x7E, 0x73, 0x73, 0x73, 0x7E, 0x00};
+    static const char battery_25[] = {0x7E, 0x63, 0x63, 0x63, 0x7E, 0x00};
 
     if (perc <= 25) {
         return battery_25;
@@ -219,7 +219,7 @@ const char* get_battery_symbol(uint8_t perc) {
 //
 // The symbol is assumed to be exactly one character (OLED_FONT_WIDTH bytes), not including any null terminator.
 uint8_t write_perc_with_symbol(const char *symbol, char *perc_buf) {
-    oled_write_raw(symbol, OLED_FONT_WIDTH);
+    oled_write_raw_P(symbol, OLED_FONT_WIDTH);
     oled_advance_char();
 
     oled_write(perc_buf, false);
@@ -274,7 +274,7 @@ uint8_t write_layer(char* label, bool is_on) {
         oled_write_char(' ', false);
     }
 
-    oled_write_P(label, is_on);
+    oled_write(label, is_on);
     return 4;
 }
 
@@ -321,7 +321,7 @@ bool oled_task_user(void) {
         uint8_t default_layer = get_highest_layer(default_layer_state);
         char *default_layer_label = "CMK";
 
-        oled_write_P(PSTR("LYT:"), false);
+        oled_write("LYT:", false);
         oled_advance_page(true);
         if (default_layer == _COLEMAK) {
             default_layer_label = "CMK";
@@ -332,7 +332,7 @@ bool oled_task_user(void) {
         ensure_blank_line(3);
 
         uint8_t highest_layer = get_highest_layer(layer_state);
-        oled_write_P(PSTR("LYR:"), false);
+        oled_write("LYR:", false);
         oled_advance_page(true);
         write_layer(default_layer_label, highest_layer == _COLEMAK);
         oled_advance_page(true);
